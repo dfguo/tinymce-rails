@@ -4,7 +4,7 @@ module TinyMCE::Rails
   describe Configuration do
     it "has default options" do
       Configuration.defaults.should eq(
-        "mode"            => "textareas",
+        "mode"            => "specific_textareas",
         "theme"           => "advanced",
         "editor_selector" => "tinymce"
       )
@@ -14,25 +14,6 @@ module TinyMCE::Rails
       options = { "option" => "value" }
       config = Configuration.new(options)
       config.options.should eq(options)
-    end
-    
-    it "loads configuration from YAML file" do
-      file = File.expand_path("../fixtures/tinymce.yml", File.dirname(__FILE__))
-      config = Configuration.load(file)
-      config.options.should eq(
-        "mode" => "textareas",
-        "theme" => "advanced",
-        "editor_selector" => "tinymce",
-        "plugins" => %w(inlinepopups imageselector contextmenu paste table fullscreen),
-        "theme_advanced_toolbar_location" => "top",
-        "theme_advanced_toolbar_align" => "left",
-        "option_specified_with_erb_value" => "ERB"
-      )
-    end
-    
-    it "uses default configuration when loading a nonexistant file" do
-      config = Configuration.load("missing.yml")
-      config.options.should eq(Configuration.defaults)
     end
     
     it "detects available languages" do
@@ -54,6 +35,16 @@ module TinyMCE::Rails
       it "combines arrays of strings into a single comma-separated string" do
         config = Configuration.new("plugins" => %w(paste table fullscreen))
         config.options_for_tinymce["plugins"].should eq("paste,table,fullscreen")
+      end
+      
+      it "works with integer values" do
+        config = Configuration.new("width" => 123)
+        config.options_for_tinymce["width"].should eq(123)
+      end
+      
+      it "converts javascript function strings to Function objects" do
+        config = Configuration.new("oninit" => "function() {}")
+        config.options_for_tinymce["oninit"].should be_a(Configuration::Function)
       end
       
       it "returns the language based on the current locale" do
